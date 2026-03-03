@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
 
     steps:
       - name: Checkout
@@ -25,65 +24,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@vascohq'
 
       - name: Install Bazel
         run: npm install -g @bazel/bazelisk
 
-      - name: Build packages
+      - name: Build CLI package
         run: |
-          bazel build //packages/@dataform/cli:package //packages/@dataform/core:package
-          echo "✓ Packages built"
+          bazel build //packages/@dataform/cli:package
+          echo "✓ CLI package built"
 
-      - name: Copy packages to writable directory
+      - name: Copy CLI package to writable directory
         run: |
-          mkdir -p publish-packages/cli publish-packages/core
+          mkdir -p publish-packages/cli
           cp -r bazel-bin/packages/@dataform/cli/package/* publish-packages/cli/
-          cp -r bazel-bin/packages/@dataform/core/package/* publish-packages/core/
           chmod -R u+w publish-packages/
-          echo "✓ Packages copied and made writable"
-
-      - name: Update package.json for GitHub Packages
-        run: |
-          # Update CLI package
-          cd publish-packages/cli
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@vascohq/dataform-cli';
-            pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-
-          # Update Core package
-          cd ../core
-          node -e "
-            const pkg = require('./package.json');
-            pkg.name = '@vascohq/dataform-core';
-            pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-
-      - name: Publish CLI
-        continue-on-error: true
-        run: |
-          cd publish-packages/cli
-          npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Core
-        continue-on-error: true
-        run: |
-          cd publish-packages/core
-          npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Summary
-        run: |
-          echo "✓ Published @vascohq/dataform-cli and @vascohq/dataform-core"
-          echo "Version: $(cd publish-packages/cli && node -pe "require('./package.json').version")"
+          echo "✓ CLI package copied and made writable"
 
       - name: Create CLI tarball for release
         run: |
