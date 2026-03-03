@@ -1,0 +1,76 @@
+name: Build and Publish to GitHub Packages
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v3.0.48-vasco.1
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 3.0.48-vasco.1)'
+        required: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@vascohq'
+
+      - name: Install Bazel
+        run: npm install -g @bazel/bazelisk
+
+      - name: Build packages
+        run: |
+          bazel build //packages/@dataform/cli:package //packages/@dataform/core:package
+          echo "✓ Packages built"
+
+      - name: Update package.json for GitHub Packages
+        run: |
+          # Update CLI package
+          cd bazel-bin/packages/@dataform/cli/package
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@vascohq/dataform-cli';
+            pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+          # Update Core package
+          cd ../../../core/package
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@vascohq/dataform-core';
+            pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Publish CLI
+        run: |
+          cd bazel-bin/packages/@dataform/cli/package
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Core
+        run: |
+          cd bazel-bin/packages/@dataform/core/package
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "✓ Published @vascohq/dataform-cli and @vascohq/dataform-core"
+          echo "Version: $(cd bazel-bin/packages/@dataform/cli/package && node -pe "require('./package.json').version")"
