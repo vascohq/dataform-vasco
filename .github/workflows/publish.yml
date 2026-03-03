@@ -36,10 +36,17 @@ jobs:
           bazel build //packages/@dataform/cli:package //packages/@dataform/core:package
           echo "✓ Packages built"
 
+      - name: Copy packages to writable directory
+        run: |
+          mkdir -p publish-packages/cli publish-packages/core
+          cp -r bazel-bin/packages/@dataform/cli/package/* publish-packages/cli/
+          cp -r bazel-bin/packages/@dataform/core/package/* publish-packages/core/
+          echo "✓ Packages copied"
+
       - name: Update package.json for GitHub Packages
         run: |
           # Update CLI package
-          cd bazel-bin/packages/@dataform/cli/package
+          cd publish-packages/cli
           node -e "
             const pkg = require('./package.json');
             pkg.name = '@vascohq/dataform-cli';
@@ -48,7 +55,7 @@ jobs:
           "
 
           # Update Core package
-          cd ../../../core/package
+          cd ../core
           node -e "
             const pkg = require('./package.json');
             pkg.name = '@vascohq/dataform-core';
@@ -58,14 +65,14 @@ jobs:
 
       - name: Publish CLI
         run: |
-          cd bazel-bin/packages/@dataform/cli/package
+          cd publish-packages/cli
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Core
         run: |
-          cd bazel-bin/packages/@dataform/core/package
+          cd publish-packages/core
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,4 +80,4 @@ jobs:
       - name: Summary
         run: |
           echo "✓ Published @vascohq/dataform-cli and @vascohq/dataform-core"
-          echo "Version: $(cd bazel-bin/packages/@dataform/cli/package && node -pe "require('./package.json').version")"
+          echo "Version: $(cd publish-packages/cli && node -pe "require('./package.json').version")"
