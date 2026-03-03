@@ -67,14 +67,14 @@ jobs:
       - name: Publish CLI
         run: |
           cd publish-packages/cli
-          npm publish
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Core
         run: |
           cd publish-packages/core
-          npm publish
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
