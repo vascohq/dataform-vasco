@@ -50,7 +50,6 @@ jobs:
           cd publish-packages/cli
           node -e "
             const pkg = require('./package.json');
-            pkg.name = '@vascohq/dataform-cli';
             pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
             require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
@@ -59,7 +58,6 @@ jobs:
           cd ../core
           node -e "
             const pkg = require('./package.json');
-            pkg.name = '@vascohq/dataform-core';
             pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
             require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
