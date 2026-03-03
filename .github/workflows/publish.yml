@@ -1,4 +1,4 @@
-name: Build and Publish to GitHub Packages
+name: Build and Publish
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -82,3 +82,26 @@ jobs:
         run: |
           echo "✓ Published @vascohq/dataform-cli and @vascohq/dataform-core"
           echo "Version: $(cd publish-packages/cli && node -pe "require('./package.json').version")"
+
+      - name: Create CLI tarball for release
+        run: |
+          cd publish-packages/cli
+          tar -czf dataform-cli.tar.gz bundle.js worker_bundle.js package.json
+          echo "✓ Created CLI tarball"
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cd publish-packages/cli && node -pe "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ steps.version.outputs.version }}
+          files: publish-packages/cli/dataform-cli.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
