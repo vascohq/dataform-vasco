@@ -175,17 +175,14 @@ export class Test extends ActionBuilder<dataform.Test> {
         );
       }
       const dataset = allResolved.length > 0 ? allResolved[0] : undefined;
-      if (!(dataset && (dataset instanceof Table || dataset instanceof View))) {
+      if (!(dataset && (dataset instanceof Table || dataset instanceof View || dataset instanceof IncrementalTable))) {
         this.session.compileError(
           new Error(`Dataset ${stringifyResolvable(this.datasetToTest)} could not be found.`),
           this.proto.fileName
         );
-      } else if (dataset instanceof IncrementalTable) {
-        this.session.compileError(
-          new Error("Running tests on incremental datasets is not yet supported."),
-          this.proto.fileName
-        );
       } else {
+        // For incremental tables, the test runs the non-incremental path (incremental() = false),
+        // which mirrors what happens on the first build.
         const refReplacingContext = new RefReplacingContext(testContext);
         this.proto.testQuery = refReplacingContext.apply(dataset.contextableQuery);
       }
