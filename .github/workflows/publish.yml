@@ -28,22 +28,23 @@ jobs:
       - name: Install Bazel
         run: npm install -g @bazel/bazelisk
 
-      - name: Build CLI package
+      - name: Build CLI and Core packages
         run: |
-          bazel build //packages/@dataform/cli:package
-          echo "✓ CLI package built"
+          bazel build //packages/@dataform/cli:package //packages/@dataform/core:package
+          echo "✓ CLI and Core packages built"
 
-      - name: Copy CLI package to writable directory
+      - name: Copy packages to writable directory
         run: |
           mkdir -p publish-packages/cli
           cp -r bazel-bin/packages/@dataform/cli/package/* publish-packages/cli/
+          cp bazel-bin/packages/@dataform/core/package/bundle.js publish-packages/cli/dataform-core-bundle.js
           chmod -R u+w publish-packages/
-          echo "✓ CLI package copied and made writable"
+          echo "✓ Packages copied and made writable"
 
       - name: Create CLI tarball for release
         run: |
           cd publish-packages/cli
-          tar -czf dataform-cli.tar.gz bundle.js worker_bundle.js package.json
+          tar -czf dataform-cli.tar.gz bundle.js worker_bundle.js package.json dataform-core-bundle.js
           echo "✓ Created CLI tarball"
 
       - name: Get version

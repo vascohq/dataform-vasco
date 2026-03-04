@@ -1,1 +1,1 @@
-DF_VERSION = "3.0.48-vasco.2"
+DF_VERSION = "3.0.48-vasco.3"
