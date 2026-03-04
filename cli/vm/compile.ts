@@ -49,9 +49,10 @@ export function compile(compileConfig: dataform.ICompileConfig) {
         path.join(parentDirName, path.relative(parentDirName, compileConfig.projectDir), moduleName)
     },
     sourceExtensions: ["js", "sql", "sqlx", "yaml", "yml", "test"],
-    // .sqlx.test files need the SQLX compiler; .js.test files are plain JS.
+    // The SQLX compiler detects files by their .sqlx extension. Strip .test so
+    // .sqlx.test files are transformed correctly; all other files pass through unchanged.
     compiler: (code, filename) =>
-      filename.endsWith(".sqlx.test") ? compiler(code, filename) : code
+      compiler(code, filename.endsWith(".sqlx.test") ? filename.slice(0, -".test".length) : filename)
   });
 
   const dataformCoreVersion: string = userCodeVm.run(
