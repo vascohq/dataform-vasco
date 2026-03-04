@@ -48,8 +48,10 @@ export function compile(compileConfig: dataform.ICompileConfig) {
       resolve: (moduleName, parentDirName) =>
         path.join(parentDirName, path.relative(parentDirName, compileConfig.projectDir), moduleName)
     },
-    sourceExtensions: ["js", "sql", "sqlx", "yaml", "yml"],
-    compiler
+    sourceExtensions: ["js", "sql", "sqlx", "yaml", "yml", "test"],
+    // .sqlx.test files need the SQLX compiler; .js.test files are plain JS.
+    compiler: (code, filename) =>
+      filename.endsWith(".sqlx.test") ? compiler(code, filename) : code
   });
 
   const dataformCoreVersion: string = userCodeVm.run(
