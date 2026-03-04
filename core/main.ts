@@ -238,7 +238,16 @@ function dataformCompile(compileRequest: dataform.ICompileExecutionRequest, sess
   // Require all "definitions" files (attaching them to the session).
   compileRequest.compileConfig.filePaths
     .filter(path => path.startsWith(`definitions${Path.separator}`))
-    .filter(path => Path.fileExtension(path) === "js" || Path.fileExtension(path) === "sqlx")
+    .filter(path => {
+      const ext = Path.fileExtension(path);
+      if (ext === "js" || ext === "sqlx") return true;
+      // Also recognize .sqlx.test and .js.test (test files hidden from GCP Dataform).
+      if (ext === "test") {
+        const baseExt = Path.fileExtension(path.slice(0, -".test".length));
+        return baseExt === "js" || baseExt === "sqlx";
+      }
+      return false;
+    })
     .sort()
     .forEach(definitionPath => {
       try {
